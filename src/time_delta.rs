@@ -74,7 +74,7 @@ impl TimeDelta {
     /// Equivalent to `Duration::seconds(weeks * 7 * 24 * 60 * 60)` with overflow checks.
     /// Panics when the duration is out of bounds.
     #[inline]
-    pub fn weeks(weeks: i64) -> TimeDelta {
+    pub const fn weeks(weeks: i64) -> TimeDelta {
         let secs = weeks.checked_mul(SECS_PER_WEEK).expect("Duration::weeks out of bounds");
         TimeDelta::seconds(secs)
     }
@@ -83,7 +83,7 @@ impl TimeDelta {
     /// Equivalent to `Duration::seconds(days * 24 * 60 * 60)` with overflow checks.
     /// Panics when the duration is out of bounds.
     #[inline]
-    pub fn days(days: i64) -> TimeDelta {
+    pub const fn days(days: i64) -> TimeDelta {
         let secs = days.checked_mul(SECS_PER_DAY).expect("Duration::days out of bounds");
         TimeDelta::seconds(secs)
     }
@@ -92,7 +92,7 @@ impl TimeDelta {
     /// Equivalent to `Duration::seconds(hours * 60 * 60)` with overflow checks.
     /// Panics when the duration is out of bounds.
     #[inline]
-    pub fn hours(hours: i64) -> TimeDelta {
+    pub const fn hours(hours: i64) -> TimeDelta {
         let secs = hours.checked_mul(SECS_PER_HOUR).expect("Duration::hours ouf of bounds");
         TimeDelta::seconds(secs)
     }
@@ -101,7 +101,7 @@ impl TimeDelta {
     /// Equivalent to `Duration::seconds(minutes * 60)` with overflow checks.
     /// Panics when the duration is out of bounds.
     #[inline]
-    pub fn minutes(minutes: i64) -> TimeDelta {
+    pub const fn minutes(minutes: i64) -> TimeDelta {
         let secs = minutes.checked_mul(SECS_PER_MINUTE).expect("Duration::minutes out of bounds");
         TimeDelta::seconds(secs)
     }
@@ -110,7 +110,7 @@ impl TimeDelta {
     /// Panics when the duration is more than `i64::MAX` seconds
     /// or less than `i64::MIN` seconds.
     #[inline]
-    pub fn seconds(seconds: i64) -> TimeDelta {
+    pub const fn seconds(seconds: i64) -> TimeDelta {
         let d = TimeDelta { secs: seconds, nanos: 0 };
         if d < MIN || d > MAX {
             panic!("Duration::seconds out of bounds");
@@ -120,7 +120,7 @@ impl TimeDelta {
 
     /// Makes a new `Duration` with given number of milliseconds.
     #[inline]
-    pub fn milliseconds(milliseconds: i64) -> TimeDelta {
+    pub const fn milliseconds(milliseconds: i64) -> TimeDelta {
         let (secs, millis) = div_mod_floor_64(milliseconds, MILLIS_PER_SEC);
         let nanos = millis as i32 * NANOS_PER_MILLI;
         TimeDelta { secs, nanos }
@@ -128,7 +128,7 @@ impl TimeDelta {
 
     /// Makes a new `Duration` with given number of microseconds.
     #[inline]
-    pub fn microseconds(microseconds: i64) -> TimeDelta {
+    pub const fn microseconds(microseconds: i64) -> TimeDelta {
         let (secs, micros) = div_mod_floor_64(microseconds, MICROS_PER_SEC);
         let nanos = micros as i32 * NANOS_PER_MICRO;
         TimeDelta { secs, nanos }
@@ -136,36 +136,36 @@ impl TimeDelta {
 
     /// Makes a new `Duration` with given number of nanoseconds.
     #[inline]
-    pub fn nanoseconds(nanos: i64) -> TimeDelta {
+    pub const fn nanoseconds(nanos: i64) -> TimeDelta {
         let (secs, nanos) = div_mod_floor_64(nanos, NANOS_PER_SEC as i64);
         TimeDelta { secs, nanos: nanos as i32 }
     }
 
     /// Returns the total number of whole weeks in the duration.
     #[inline]
-    pub fn num_weeks(&self) -> i64 {
+    pub const fn num_weeks(&self) -> i64 {
         self.num_days() / 7
     }
 
     /// Returns the total number of whole days in the duration.
-    pub fn num_days(&self) -> i64 {
+    pub const fn num_days(&self) -> i64 {
         self.num_seconds() / SECS_PER_DAY
     }
 
     /// Returns the total number of whole hours in the duration.
     #[inline]
-    pub fn num_hours(&self) -> i64 {
+    pub const fn num_hours(&self) -> i64 {
         self.num_seconds() / SECS_PER_HOUR
     }
 
     /// Returns the total number of whole minutes in the duration.
     #[inline]
-    pub fn num_minutes(&self) -> i64 {
+    pub const fn num_minutes(&self) -> i64 {
         self.num_seconds() / SECS_PER_MINUTE
     }
 
     /// Returns the total number of whole seconds in the duration.
-    pub fn num_seconds(&self) -> i64 {
+    pub const fn num_seconds(&self) -> i64 {
         // If secs is negative, nanos should be subtracted from the duration.
         if self.secs < 0 && self.nanos > 0 {
             self.secs + 1
@@ -177,7 +177,7 @@ impl TimeDelta {
     /// Returns the number of nanoseconds such that
     /// `nanos_mod_sec() + num_seconds() * NANOS_PER_SEC` is the total number of
     /// nanoseconds in the duration.
-    fn nanos_mod_sec(&self) -> i32 {
+    const fn nanos_mod_sec(&self) -> i32 {
         if self.secs < 0 && self.nanos > 0 {
             self.nanos - NANOS_PER_SEC
         } else {
@@ -186,7 +186,7 @@ impl TimeDelta {
     }
 
     /// Returns the total number of whole milliseconds in the duration,
-    pub fn num_milliseconds(&self) -> i64 {
+    pub const fn num_milliseconds(&self) -> i64 {
         // A proper Duration will not overflow, because MIN and MAX are defined
         // such that the range is exactly i64 milliseconds.
         let secs_part = self.num_seconds() * MILLIS_PER_SEC;
@@ -196,7 +196,7 @@ impl TimeDelta {
 
     /// Returns the total number of whole microseconds in the duration,
     /// or `None` on overflow (exceeding 2^63 microseconds in either direction).
-    pub fn num_microseconds(&self) -> Option<i64> {
+    pub const fn num_microseconds(&self) -> Option<i64> {
         let secs_part = try_opt!(self.num_seconds().checked_mul(MICROS_PER_SEC));
         let nanos_part = self.nanos_mod_sec() / NANOS_PER_MICRO;
         secs_part.checked_add(nanos_part as i64)
@@ -204,14 +204,14 @@ impl TimeDelta {
 
     /// Returns the total number of whole nanoseconds in the duration,
     /// or `None` on overflow (exceeding 2^63 nanoseconds in either direction).
-    pub fn num_nanoseconds(&self) -> Option<i64> {
+    pub const fn num_nanoseconds(&self) -> Option<i64> {
         let secs_part = try_opt!(self.num_seconds().checked_mul(NANOS_PER_SEC as i64));
         let nanos_part = self.nanos_mod_sec();
         secs_part.checked_add(nanos_part as i64)
     }
 
     /// Add two durations, returning `None` if overflow occurred.
-    pub fn checked_add(&self, rhs: &TimeDelta) -> Option<TimeDelta> {
+    pub const fn checked_add(&self, rhs: &TimeDelta) -> Option<TimeDelta> {
         let mut secs = try_opt!(self.secs.checked_add(rhs.secs));
         let mut nanos = self.nanos + rhs.nanos;
         if nanos >= NANOS_PER_SEC {
@@ -229,7 +229,7 @@ impl TimeDelta {
     }
 
     /// Subtract two durations, returning `None` if overflow occurred.
-    pub fn checked_sub(&self, rhs: &TimeDelta) -> Option<TimeDelta> {
+    pub const fn checked_sub(&self, rhs: &TimeDelta) -> Option<TimeDelta> {
         let mut secs = try_opt!(self.secs.checked_sub(rhs.secs));
         let mut nanos = self.nanos - rhs.nanos;
         if nanos < 0 {
@@ -248,7 +248,7 @@ impl TimeDelta {
 
     /// Returns the duration as an absolute (non-negative) value.
     #[inline]
-    pub fn abs(&self) -> TimeDelta {
+    pub const fn abs(&self) -> TimeDelta {
         if self.secs < 0 && self.nanos != 0 {
             TimeDelta { secs: (self.secs + 1).abs(), nanos: NANOS_PER_SEC - self.nanos }
         } else {
@@ -258,25 +258,25 @@ impl TimeDelta {
 
     /// The minimum possible `Duration`: `i64::MIN` milliseconds.
     #[inline]
-    pub fn min_value() -> TimeDelta {
+    pub const fn min_value() -> TimeDelta {
         MIN
     }
 
     /// The maximum possible `Duration`: `i64::MAX` milliseconds.
     #[inline]
-    pub fn max_value() -> TimeDelta {
+    pub const fn max_value() -> TimeDelta {
         MAX
     }
 
     /// A duration where the stored seconds and nanoseconds are equal to zero.
     #[inline]
-    pub fn zero() -> TimeDelta {
+    pub const fn zero() -> TimeDelta {
         TimeDelta { secs: 0, nanos: 0 }
     }
 
     /// Returns `true` if the duration equals `Duration::zero()`.
     #[inline]
-    pub fn is_zero(&self) -> bool {
+    pub const fn is_zero(&self) -> bool {
         self.secs == 0 && self.nanos == 0
     }
 
@@ -284,7 +284,7 @@ impl TimeDelta {
     ///
     /// This function errors when original duration is larger than the maximum
     /// value supported for this type.
-    pub fn from_std(duration: StdDuration) -> Result<TimeDelta, OutOfRangeError> {
+    pub const fn from_std(duration: StdDuration) -> Result<TimeDelta, OutOfRangeError> {
         // We need to check secs as u64 before coercing to i64
         if duration.as_secs() > MAX.secs as u64 {
             return Err(OutOfRangeError(()));
@@ -301,7 +301,7 @@ impl TimeDelta {
     ///
     /// This function errors when duration is less than zero. As standard
     /// library implementation is limited to non-negative values.
-    pub fn to_std(&self) -> Result<StdDuration, OutOfRangeError> {
+    pub const fn to_std(&self) -> Result<StdDuration, OutOfRangeError> {
         if self.secs < 0 {
             return Err(OutOfRangeError(()));
         }
